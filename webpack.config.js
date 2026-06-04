@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 /** Read .env at config evaluation time (devServer proxy runs before DotenvPlugin). */
@@ -45,6 +46,17 @@ const API_URL = normalizeApiUrl(
 module.exports = (env, argv) => {
   const mode = argv.mode || 'development';
 
+  // Replace process.env.* at build time — browsers have no global `process`
+  const clientEnv = {
+    'process.env.NODE_ENV': JSON.stringify(mode),
+    'process.env.REACT_APP_API_URL': JSON.stringify(
+      process.env.REACT_APP_API_URL || fileEnv.REACT_APP_API_URL || '',
+    ),
+    'process.env.REACT_APP_GOOGLE_CLIENT_ID': JSON.stringify(
+      process.env.REACT_APP_GOOGLE_CLIENT_ID || fileEnv.REACT_APP_GOOGLE_CLIENT_ID || '',
+    ),
+  };
+
   return {
     mode,
     entry: './src/index.tsx',
@@ -88,11 +100,8 @@ module.exports = (env, argv) => {
       new HtmlWebpackPlugin({
         template: './src/index.html',
       }),
+      new webpack.DefinePlugin(clientEnv),
     ],
-    // Expose REACT_APP_* to client code via DefinePlugin (prefix defaults to WEBPACK_)
-    dotenv: {
-      prefix: 'REACT_APP_',
-    },
     devServer: {
       port: 8080,
       historyApiFallback: true,
