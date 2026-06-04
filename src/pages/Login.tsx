@@ -78,9 +78,9 @@ export const Login: React.FC = () => {
           />
         </div>
 
-        <div className={styles.divider}>Or Local Dev Bypass</div>
+        {/* <div className={styles.divider}>Or Local Dev Bypass</div> */}
 
-        <form onSubmit={handleBypassSubmit} className={styles.bypassSection}>
+        {/* <form onSubmit={handleBypassSubmit} className={styles.bypassSection}>
           <div className={styles.bypassTitle}>
             <Lock size={14} style={{ marginRight: 6, display: 'inline', verticalAlign: 'text-bottom' }} />
             Developer Sandboxed Access
@@ -138,7 +138,7 @@ export const Login: React.FC = () => {
               </div>
             </div>
           </div>
-        </form>
+        </form> */}
       </div>
     </div>
   );
