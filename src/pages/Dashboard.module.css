@@ -114,6 +114,178 @@
   color: var(--text-secondary);
 }
 
+.currencyUnit {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.currencyUnitSm {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.kpiDelta {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ── Gráfico de flujo diario ── */
+.chartPanel {
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.chartArea {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 140px;
+  padding-top: 8px;
+}
+
+.chartCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  min-width: 0;
+}
+
+.chartBars {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  width: 100%;
+  justify-content: center;
+}
+
+.chartBarIn {
+  width: 12px;
+  max-width: 40%;
+  background: linear-gradient(180deg, var(--color-usd) 0%, rgba(16, 185, 129, 0.4) 100%);
+  border-radius: 3px 3px 0 0;
+  transition: height 0.3s ease;
+}
+
+.chartBarOut {
+  width: 12px;
+  max-width: 40%;
+  background: linear-gradient(180deg, #ef4444 0%, rgba(239, 68, 68, 0.4) 100%);
+  border-radius: 3px 3px 0 0;
+  transition: height 0.3s ease;
+}
+
+.chartLabel {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.chartLegend {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 14px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.chartLegend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendDotIn,
+.legendDotOut {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.legendDotIn {
+  background: var(--color-usd);
+}
+
+.legendDotOut {
+  background: #ef4444;
+}
+
+/* ── Barra de herramientas del ledger ── */
+.ledgerToolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-sm);
+  padding: 7px 12px;
+  flex: 1;
+  min-width: 200px;
+  transition: border-color 0.2s ease;
+}
+
+.searchBox:focus-within {
+  border-color: var(--color-primary);
+}
+
+.searchBox input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-family: inherit;
+  flex: 1;
+  min-width: 0;
+}
+
+.searchBox input::placeholder {
+  color: var(--text-muted);
+}
+
+.filterChips {
+  display: flex;
+  gap: 6px;
+}
+
+.chip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.chip:hover {
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.chipActive {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: var(--color-primary);
+}
+
 /* Main Dashboard Split Grid */
 .dashboardSplit {
   display: grid;

@@ -6,28 +6,42 @@
   --glass-bg: rgba(17, 24, 39, 0.6);
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-highlight: rgba(255, 255, 255, 0.03);
-  
+
   --color-primary: #6366f1; /* Indigo */
   --color-primary-glow: rgba(99, 102, 241, 0.15);
   --color-secondary: #0ea5e9; /* Sky Blue */
-  
+
   --color-usd: #10b981; /* Green */
   --color-usd-glow: rgba(16, 185, 129, 0.15);
-  
+
   --color-ves: #f59e0b; /* Amber Gold */
   --color-ves-glow: rgba(245, 158, 11, 0.15);
-  
+
+  /* Semantic status colors */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-danger-bg: rgba(239, 68, 68, 0.1);
+  --color-danger-border: rgba(239, 68, 68, 0.25);
+
   --text-primary: #f3f4f6;
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
-  
+
   --border-radius-sm: 8px;
   --border-radius-md: 12px;
   --border-radius-lg: 20px;
-  
+
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
   --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.25);
   --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.4);
+
+  /* Z-index scale */
+  --z-sidebar: 90;
+  --z-mobile-toggle: 100;
+  --z-dropdown: 120;
+  --z-modal: 150;
+  --z-toast: 200;
 
   /* Responsive breakpoints (align shell @ 900px) */
   --bp-sm: 640px;
@@ -40,7 +54,17 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+/* Accessible keyboard focus ring (replaces the old global outline:none) */
+:focus {
   outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 body {
@@ -174,8 +198,17 @@ body::after {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
 /* Dynamic glow inputs */
@@ -187,6 +220,7 @@ body::after {
   padding: 10px 14px;
   font-size: 0.9rem;
   transition: all 0.2s ease;
+  font-family: inherit;
 }
 
 .glow-input:focus {
@@ -202,6 +236,7 @@ body::after {
   border: 1px solid var(--glass-border);
   padding: 10px 14px;
   border-radius: var(--border-radius-sm);
+  font-family: inherit;
 }
 
 .glow-select option {
@@ -242,5 +277,103 @@ body::after {
     margin-left: -4px;
     margin-right: -4px;
     padding-bottom: 4px;
+  }
+}
+
+/* Skip link for keyboard users */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 8px;
+  z-index: 999;
+  background: var(--color-primary);
+  color: white;
+  padding: 10px 18px;
+  border-radius: var(--border-radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.skip-link:focus {
+  left: 8px;
+}
+
+/* ------------------------------------------------------------------
+   Responsive tables: on small screens each row becomes a stacked card.
+   Cells must declare data-label="Column name" for the pseudo-label.
+   ------------------------------------------------------------------ */
+@media (max-width: 640px) {
+  table.responsive-table {
+    min-width: 0 !important;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  table.responsive-table thead {
+    display: none;
+  }
+
+  table.responsive-table,
+  table.responsive-table tbody,
+  table.responsive-table tr,
+  table.responsive-table td {
+    display: block;
+    width: 100%;
+  }
+
+  table.responsive-table tr {
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  table.responsive-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    border-bottom: none !important;
+    padding: 6px 0 !important;
+    text-align: right !important;
+  }
+
+  table.responsive-table td::before {
+    content: attr(data-label);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  table.responsive-table td[data-label=""]::before,
+  table.responsive-table td:not([data-label])::before {
+    content: none;
+  }
+}
+
+/* Touch devices: hover-lift effects add nothing, disable them */
+@media (hover: none) {
+  .glass-card-hover:hover {
+    transform: none;
+    box-shadow: var(--shadow-md);
+    border-color: var(--glass-border);
+  }
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

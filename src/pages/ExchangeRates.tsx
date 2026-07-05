@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from 'react';
+import { DateTime } from 'luxon';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Coins, Calendar, Plus, RefreshCw, Loader2, Check, AlertCircle } from 'lucide-react';
+import { Coins, Calendar, Plus, RefreshCw } from 'lucide-react';
+import { Alert } from '../components/Alert';
+import { Button } from '../components/Button';
+import { EmptyState } from '../components/EmptyState';
+import { TableSkeleton } from '../components/Skeleton';
+import { Pagination, usePagination } from '../components/Pagination';
+import { PageHeader } from '../components/PageHeader';
+import { useToast } from '../components/Toast';
 import styles from './ExchangeRates.module.css';
 
 interface ExchangeRate {
@@ -13,27 +21,32 @@ interface ExchangeRate {
 
 export const ExchangeRates: React.FC = () => {
   const { activeRestaurant } = useAuth();
+  const { showToast } = useToast();
   const [rates, setRates] = useState<ExchangeRate[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Form State
-  const [rateDate, setRateDate] = useState('2026-05-20');
+
+  // Formulario
+  const [rateDate, setRateDate] = useState(() => DateTime.now().toFormat('yyyy-LL-dd'));
   const [rateValue, setRateValue] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Status Alerts
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const localCode = activeRestaurant?.localCurrencyCode || 'VES';
   const localSymbol = activeRestaurant?.localCurrencySymbol || 'Bs';
 
+  const todayIso = DateTime.now().toFormat('yyyy-LL-dd');
+  const hasTodayRate = rates.some(r => r.date === todayIso);
+
   const loadRates = async () => {
     try {
       setLoading(true);
       const data = await api.getExchangeRates();
-      setRates(data);
+      // Más recientes primero
+      const sorted = [...data].sort((a: ExchangeRate, b: ExchangeRate) => (a.date < b.date ? 1 : -1));
+      setRates(sorted);
     } catch (err: any) {
-      setAlert({ type: 'error', message: err?.message || 'Failed to load exchange rates history.' });
+      setAlert({ type: 'error', message: err?.message || 'No se pudo cargar el historial de tasas.' });
     } finally {
       setLoading(false);
     }
@@ -48,7 +61,7 @@ export const ExchangeRates: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!rateValue || isNaN(Number(rateValue))) {
-      setAlert({ type: 'error', message: 'Please enter a valid exchange rate value.' });
+      setAlert({ type: 'error', message: 'Ingresa un valor de tasa válido.' });
       return;
     }
 
@@ -56,100 +69,129 @@ export const ExchangeRates: React.FC = () => {
       setActionLoading(true);
       setAlert(null);
       await api.setExchangeRate(rateDate, Number(rateValue));
-      setAlert({ type: 'success', message: `Successfully registered 1 USD = ${rateValue} ${localSymbol} for date ${rateDate}!` });
+      showToast(`Tasa registrada: 1 USD = ${rateValue} ${localSymbol} para el ${DateTime.fromISO(rateDate).toFormat('dd/LL/yyyy')}.`);
       setRateValue('');
       loadRates();
     } catch (err: any) {
-      setAlert({ type: 'error', message: err?.message || 'Failed to set exchange rate.' });
+      setAlert({ type: 'error', message: err?.message || 'No se pudo registrar la tasa.' });
     } finally {
       setActionLoading(false);
     }
   };
 
+  const pagination = usePagination(rates, 10);
+
   if (!activeRestaurant) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-        <p style={{ color: 'var(--text-secondary)' }}>Loading active restaurant profile...</p>
+        <p style={{ color: 'var(--text-secondary)' }}>Cargando el perfil del restaurante...</p>
       </div>
     );
   }
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>USD Daily Exchange Rates</h1>
-        <p className={styles.subtitle}>Set and manage locked exchange rates per day for exact billing and cash ledger calculations.</p>
-      </header>
+      <PageHeader
+        title="Tasas de cambio USD"
+        subtitle={`Registra la tasa diaria USD → ${localCode} que se usará para todos los cálculos de facturas y caja.`}
+      />
 
       {alert && (
-        <div className={alert.type === 'success' ? styles.alertSuccess : styles.alertError} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {alert.type === 'success' ? <Check size={18} /> : <AlertCircle size={18} />}
-          <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{alert.message}</span>
-        </div>
+        <Alert type={alert.type} onDismiss={() => setAlert(null)}>
+          {alert.message}
+        </Alert>
+      )}
+
+      {!loading && !hasTodayRate && (
+        <Alert type="warning">
+          Aún no registras la tasa de hoy ({DateTime.now().toFormat('dd/LL/yyyy')}). Sin ella, los
+          registros de una sola moneda quedarán bloqueados.
+        </Alert>
       )}
 
       <div className={styles.splitGrid}>
-        {/* Table List of Rates */}
-        <section className="glass-panel" style={{ padding: 24 }}>
+        {/* Historial de tasas */}
+        <section className="glass-panel panel-section">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <h2 className={styles.sectionTitle} style={{ margin: 0, border: 'none', padding: 0 }}>
               <Coins size={18} color="var(--color-primary)" />
-              <span>Historical Daily Rates ({rates.length})</span>
+              <span>Historial de tasas ({rates.length})</span>
             </h2>
-            <button 
+            <button
               onClick={loadRates}
               style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-              title="Refresh Registry"
+              title="Actualizar historial"
+              aria-label="Actualizar historial"
             >
               <RefreshCw size={14} />
             </button>
           </div>
 
           {loading ? (
-            <div style={{ padding: 32, textAlign: 'center' }}>
-              <Loader2 size={24} className="animate-spin" style={{ color: 'var(--color-primary)', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
-            </div>
+            <TableSkeleton rows={6} />
           ) : rates.length === 0 ? (
-            <div className={styles.emptyState}>No exchange rates locked. Use the editor on the right to lock a rate!</div>
+            <EmptyState
+              icon={<Coins size={36} />}
+              message="No hay tasas registradas todavía. Usa el formulario para fijar la primera tasa diaria."
+            />
           ) : (
-            <div className={styles.tableWrapper}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Lock Date</th>
-                    <th style={{ textAlign: 'right' }}>Exchange Rate Value</th>
-                    <th>Locked currency</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rates.map(r => (
-                    <tr key={r.id}>
-                      <td style={{ fontWeight: 600 }}>{r.date}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--color-ves)' }}>
-                        {Number(r.rateUsdToLocal).toFixed(4)} {localSymbol}
-                      </td>
-                      <td style={{ color: 'var(--text-secondary)', textTransform: 'uppercase', fontSize: '0.8rem' }}>
-                        USD to {localCode}
-                      </td>
+            <>
+              <div className={`${styles.tableWrapper} table-scroll`}>
+                <table className={`${styles.table} responsive-table`}>
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th style={{ textAlign: 'right' }}>Tasa registrada</th>
+                      <th>Conversión</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {pagination.pageItems.map(r => {
+                      const isToday = r.date === todayIso;
+                      return (
+                        <tr key={r.id} className={isToday ? styles.todayRow : undefined}>
+                          <td data-label="Fecha" style={{ fontWeight: 600 }}>
+                            {r.date}
+                            {isToday && <span className={styles.todayBadge}>Hoy</span>}
+                          </td>
+                          <td data-label="Tasa" style={{ textAlign: 'right', fontWeight: 600, color: 'var(--color-ves)' }}>
+                            {Number(r.rateUsdToLocal).toFixed(4)} {localSymbol}
+                          </td>
+                          <td data-label="Conversión" style={{ color: 'var(--text-secondary)', textTransform: 'uppercase', fontSize: '0.8rem' }}>
+                            USD → {localCode}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <Pagination
+                page={pagination.page}
+                totalPages={pagination.totalPages}
+                total={pagination.total}
+                pageSize={pagination.pageSize}
+                onPageChange={pagination.setPage}
+                onPageSizeChange={pagination.setPageSize}
+                itemsLabel="tasas"
+              />
+            </>
           )}
         </section>
 
-        {/* Editor Form */}
-        <section className="glass-panel" style={{ padding: 24 }}>
+        {/* Formulario de registro */}
+        <section className="glass-panel panel-section">
           <h2 className={styles.sectionTitle}>
             <Calendar size={18} color="var(--color-ves)" />
-            <span>Lock Daily exchange rate</span>
+            <span>Fijar tasa diaria</span>
           </h2>
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.formGroup}>
-              <label className={styles.label}>Rate lock-in Date</label>
-              <input 
-                type="date" 
+              <label htmlFor="rate-date" className={styles.label}>Fecha de la tasa</label>
+              <input
+                id="rate-date"
+                type="date"
                 value={rateDate}
                 onChange={e => setRateDate(e.target.value)}
                 className="glow-input"
@@ -158,12 +200,13 @@ export const ExchangeRates: React.FC = () => {
             </div>
 
             <div className={styles.formGroup}>
-              <label className={styles.label}>Rate Value (1 USD = ? {localCode})</label>
+              <label htmlFor="rate-value" className={styles.label}>Valor (1 USD = ? {localCode})</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <input 
-                  type="number" 
+                <input
+                  id="rate-value"
+                  type="number"
                   step="0.0001"
-                  placeholder="e.g. 40.5000"
+                  placeholder="ej. 40.5000"
                   value={rateValue}
                   onChange={e => setRateValue(e.target.value)}
                   className="glow-input"
@@ -174,10 +217,10 @@ export const ExchangeRates: React.FC = () => {
               </div>
             </div>
 
-            <button type="submit" className={styles.submitBtn} disabled={actionLoading}>
+            <Button type="submit" variant="amber" fullWidth loading={actionLoading}>
               <Plus size={16} />
-              <span>{actionLoading ? 'Locking...' : 'Lock exchange Rate'}</span>
-            </button>
+              {actionLoading ? 'Registrando...' : 'Fijar tasa'}
+            </Button>
           </form>
         </section>
       </div>
